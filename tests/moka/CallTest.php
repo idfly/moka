@@ -7,7 +7,7 @@ class CallTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $this->_call = new Call(new CallTest_Stub([]), 'METHOD');
+        $this->_call = new Call(new CallTestStub([]), 'METHOD');
     }
 
     // returns
@@ -66,20 +66,28 @@ class CallTest extends \PHPUnit_Framework_TestCase
 
     public function testOnReturnsCall()
     {
-        $this->assertInstanceOf('idfly\moka\Call',
-            $this->_call->on(function() { return true; }));
+        $callback = function () {
+            return true;
+        };
+
+        $this->assertInstanceOf('idfly\moka\Call', $this->_call->on($callback));
     }
 
     public function testInvokeWithOnReturnsValue()
     {
-        $result = $this->_call->on(function() { return true; })->
-            returns('VALUE')->invoke([]);
+        $callback = function () {
+            return true;
+        };
+
+        $result = $this->_call->on($callback)->returns('VALUE')->invoke([]);
         $this->assertEquals([true, 'VALUE'], $result);
     }
 
     public function testInvokeWithOnNotReturnsValue()
     {
-        $result = $this->_call->on(function() { return false; })->
+        $result = $this->_call->on(function () {
+            return false;
+        })->
             returns('VALUE')->invoke([]);
         $this->assertEquals([false, null], $result);
     }
@@ -88,34 +96,55 @@ class CallTest extends \PHPUnit_Framework_TestCase
 
     public function testCallReturnsCall()
     {
-        $this->assertInstanceOf('idfly\moka\Call',
-            $this->_call->calls(function() { return true; }));
+        $this->assertInstanceOf(
+            'idfly\moka\Call',
+            $this->_call->calls(function () {
+                return true;
+            })
+        );
     }
 
     public function testInvokeWithCallReturnsValue()
     {
-        $result = $this->_call->calls(function() { return 'RES'; })->invoke([]);
+        $result = $this->_call->calls(function () {
+            return 'RES';
+
+        })->invoke([]);
         $this->assertEquals([true, 'RES'], $result);
     }
 
     public function testInvokeWithCallAndReturnsThrowError()
     {
-        $this->setExpectedException('\idfly\moka\Error',
-            'can not use "returns()" and "calls()" together');
-        $result = $this->_call->calls(function() {})->returns('RESULT');
+        $this->setExpectedException(
+            '\idfly\moka\Error',
+            'can not use "returns()" and "calls()" together'
+        );
+
+        $callback = function () {
+
+        };
+
+        $result = $this->_call->calls($callback)->returns('RESULT');
     }
 
     public function testInvokeWithReturnsAndCallThrowError()
     {
-        $this->setExpectedException('\idfly\moka\Error',
-            'can not use "calls()" and "returns()" together');
-        $result = $this->_call->returns('RESULT')->calls(function() {});
-     }
+        $this->setExpectedException(
+            '\idfly\moka\Error',
+            'can not use "calls()" and "returns()" together'
+        );
 
+        $callback = function () {
+
+        };
+
+        $result = $this->_call->returns('RESULT')->calls($callback);
+    }
 }
 
 
-class CallTest_Stub {
+class CallTestStub
+{
 
     public $calls = null;
 
@@ -128,5 +157,4 @@ class CallTest_Stub {
     {
         return $this->calls;
     }
-
 }

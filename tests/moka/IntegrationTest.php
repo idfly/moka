@@ -41,8 +41,10 @@ class IntegrationTest extends \PHPUnit_Framework_TestCase
     public function testStubReturnsResultByCallack()
     {
         $stub = \idfly\Moka::stub(null, ['method' => 'DEFAULT']);
-        $stub->moka()->stubs('method')->on(function() { return true; })->
-            returns('RESULT');
+        $callback = function () {
+            return true;
+        };
+        $stub->moka()->stubs('method')->on($callback)->returns('RESULT');
         $this->assertEquals('RESULT', $stub->method('ARG'));
     }
 
@@ -63,7 +65,11 @@ class IntegrationTest extends \PHPUnit_Framework_TestCase
     public function testStubReturnsResultOfCallack()
     {
         $stub = \idfly\Moka::stub(null, ['method' => 'DEFAULT']);
-        $stub->moka()->stubs('method')->calls(function() { return 'RESULT'; });
+        $callback = function () {
+            return 'RESULT';
+        };
+
+        $stub->moka()->stubs('method')->calls($callback);
         $this->assertEquals('RESULT', $stub->method('ARG'));
     }
 
@@ -111,8 +117,8 @@ class IntegrationTest extends \PHPUnit_Framework_TestCase
      */
     public function testMockClass()
     {
-        $class = \idfly\Moka::mockClass('\idfly\Moka', ['::method' => 'RESULT']);
-        $this->assertEquals('RESULT', $class::method());
+        $class = \idfly\Moka::mockClass('\idfly\Moka', ['::method' => 'VALUE']);
+        $this->assertEquals('VALUE', $class::method());
         $this->assertInstanceOf('\idfly\moka\Spy', $class::spy());
     }
 
@@ -148,21 +154,32 @@ class IntegrationTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['ARG1', 'ARG2'], $report[0]);
     }
 
-    const HELPER = '\idfly\moka\IntegrationTest_Helper';
+    const HELPER = '\idfly\moka\IntegrationTestHelper';
 
     /**
      * Create stub with parent
      */
     public function testStubParent()
     {
-        $stub = \idfly\Moka::stub('\Exception', ['getName' => 'NAME']);
-        $this->assertInstanceOf('\Exception', $stub);
+        $stub = \idfly\Moka::stub(self::HELPER, ['method']);
+        $this->assertInstanceOf(self::HELPER, $stub);
+    }
+
+    /**
+     * Create stub with parent
+     */
+    public function testOverridesParentValue()
+    {
+        $stub = \idfly\Moka::stub(self::HELPER, ['method' => 'VALUE']);
+        $this->assertEquals('VALUE', $stub->method());
     }
 
     public function testStubClassRemovesMethodFromParent()
     {
-        $this->setExpectedException('\idfly\moka\Error',
-            'method "method" is not stubbed');
+        $this->setExpectedException(
+            '\idfly\moka\Error',
+            'method "method" is not stubbed'
+        );
 
         $stub = \idfly\Moka::stub(self::HELPER, []);
         $stub->method();
@@ -192,15 +209,14 @@ class IntegrationTest extends \PHPUnit_Framework_TestCase
         $spy->stubs()->with('ARG')->returns('RESULT');
         $this->assertEquals('RESULT', $spy('ARG'));
     }
-
 }
 
-class IntegrationTest_Helper
+
+class IntegrationTestHelper
 {
 
     public function method()
     {
         return 'RESULT';
     }
-
 }
